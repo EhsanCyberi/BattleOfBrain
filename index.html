@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>جبهه مغزها - نسخه آفلاین</title>
+    <style>
+        /* استایل لودینگ */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 1.2rem;
+            margin-top: 15px;
+        }
+        
+        /* استایل اصلی بازی */
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --dark-color: #34495e;
+            --light-color: #ecf0f1;
+            --text-color: #333;
+            --text-light: #fff;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: var(--text-color);
+            overflow-x: hidden;
+            padding-bottom: 70px;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSg0NSkiPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0icmdiYSgwLDAsMCwwLjAzKSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNwYXR0ZXJuKSIvPjwvc3ZnPg==');
+        }
+        
+        @font-face {
+            font-family: 'Vazirmatn';
+            src: url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Regular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 10px;
+            display: none; /* ابتدا مخفی می‌شود تا لودینگ نمایش داده شود */
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
+            color: var(--text-light);
+            padding: 15px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-bottom: 2px solid var(--secondary-color);
+        }
+        
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+        
+        .header-subtitle {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        .game-area {
+            margin-top: 100px;
+        }
+        
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background-color: #a8d0e6;
+            border: 3px solid var(--primary-color);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSg0NSkiPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNwYXR0ZXJuKSIvPjwvc3ZnPg==');
+        }
+        
+        .country {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255,255,255,0.7);
+            z-index: 2;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            background-size: cover;
+            background-position: center;
+            background-blend-mode: overlay;
+        }
+        
+        .country::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.1);
+            z-index: -1;
+        }
+        
+        .country:hover {
+            transform: scale(1.03);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 3;
+        }
+        
+        .country.selected {
+            border: 3px solid gold;
+            box-shadow: 0 0 15px gold, 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 4;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 10px gold; }
+            50% { box-shadow: 0 0 20px gold; }
+            100% { box-shadow: 0 0 10px gold; }
+        }
+        
+        .country-name {
+            background: rgba(0,0,0,0.5);
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: normal;
+            text-align: center;
+        }
+        
+        .stats-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .panel-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--light-color);
+        }
+        
+        .panel-title i {
+            font-size: 1.1rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .stat-card {
+            background: var(--light-color);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            transition: all 0.3s;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            font-size: 0.7rem;
+            color: #666;
+        }
+        
+        .stat-icon {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: var(--secondary-color);
+        }
+        
+        .actions-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--secondary-color), #4aa3df);
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .btn i {
+            margin-left: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            opacity: 0.7;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .btn-attack {
+            background: linear-gradient(135deg, var(--danger-color), #ed7669);
+        }
+        
+        .btn-economy {
+            background: linear-gradient(135deg, var(--success-color), #4cdc91);
+        }
+        
+        .btn-military {
+            background: linear-gradient(135deg, var(--warning-color), #f8b45a);
+        }
+        
+        .btn-tech {
+            background: linear-gradient(135deg, #9b59b6, #b37fc7);
+        }
+        
+        .btn-next {
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
+        }
+        
+        .btn-cost {
+            background: rgba(0,0,0,0.2);
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+        
+        .log-panel {
+            background: var(--dark-color);
+            color: white;
+            border-radius: 15px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .log-time {
+            color: #bbb;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+        
+        .turn-info {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: var(--primary-color);
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .year-display {
+            font-size: 1.2rem;
+            color: var(--secondary-color);
+        }
+        
+        .tooltip {
+            position: fixed;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            max-width: 200px;
+            text-align: center;
+        }
+        
+        /* .country-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            display: none;
+            z-index: 5;
+        } */
+        
+        .country-info {
+            display: none;
+            position: absolute;
+            top: 0;
+            right: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            z-index: 5;
+            height: 100%;
+            width: 100%;
+        }
+
+        .country:hover .country-info {
+            display: block;
+        }
+        
+        .country-stats {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .country-stat {
+            text-align: center;
+            flex: 1;
+        }
+        
+        /* تنظیمات ریسپانسیو */
+        @media (max-width: 400px) {
+            .header-title {
+                font-size: 1.2rem;
+            }
+
+            .country-info {
+                position: absolute;
+                top: 0;
+                right: 0;
+                right: 0;
+                background: rgba(0, 0, 0, 0.7);
+                color: white;
+                padding: 8px;
+                border-radius: 8px;
+                font-size: 0.7rem;
+                z-index: 5;
+                height: 100%;
+                width: 100%;
+            }
+
+            .country-stats { width: 100%; }
+            
+            .header-subtitle {
+                font-size: 0.7rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stat-value {
+                font-size: 1rem;
+            }
+            
+            .btn {
+                font-size: 0.8rem;
+                padding: 10px 12px;
+            }
+            
+            .log-panel {
+                height: 150px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <!-- صفحه لودینگ -->
+    <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">در حال بارگذاری بازی...</div>
+    </div>
+    
+    <header>
+        <div class="header-title">جبهه مغزها</div>
+        <div class="header-subtitle">front of the brain</div>
+    </header>
+    
+    <div class="container">
+        <div class="game-area">
+            
+            <div class="turn-info">
+                <span>سال: <span id="year" class="year-display">1940</span></span>
+                <span> | </span>
+                <span>نوبت: <span id="turn">0</span></span>
+            </div>
+            
+            <div class="map-container" id="map">
+                <!-- کشورها اینجا قرار میگیرند -->
+            </div>
+            
+            <div class="stats-panel">
+                <div class="panel-title">
+                    <span><i class="fas fa-chart-line"></i> آمار کشور شما</span>
+                    <span id="player-country-name" style="font-size: 0.9rem;"></span>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card" data-tooltip="منبع اصلی برای تمام اقدامات. هر سال از GDP و سرزمین‌های شما تولید می‌شود.">
+                        <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                        <div class="stat-value" id="player-money">100</div>
+                        <div class="stat-label">پول (میلیون)</div>
+                    </div>
+                    <div class="stat-card" data-tooltip="میزان رشد اقتصادی. هرچه بیشتر باشد پول بیشتری در هر نوبت دریافت می‌کنید.">
+                        <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="stat-value" id="player-gdp">5%</div>
+                        <div class="stat-label">رشد اقتصادی</div>
+                    </div>
+                    <div class="stat-card" data-tooltip="قدرت نظامی شما. برای حمله و دفاع از کشور ضروری است.">
+                        <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div class="stat-value" id="player-army">20</div>
+                        <div class="stat-label">نیروی نظامی</div>
+                    </div>
+                    <div class="stat-card" data-tooltip="تعداد سرزمین‌های تحت کنترل شما. هرچه بیشتر باشد درآمد بیشتری دارید.">
+                        <div class="stat-icon"><i class="fas fa-map-marked-alt"></i></div>
+                        <div class="stat-value" id="player-land">1</div>
+                        <div class="stat-label">سرزمین</div>
+                    </div>
+                    <div class="stat-card" data-tooltip="جمعیت کشور شما. هرچه بیشتر باشد رشد اقتصادی بهتری دارید.">
+                        <div class="stat-icon"><i class="fas fa-users"></i></div>
+                        <div class="stat-value" id="player-population">10</div>
+                        <div class="stat-label">جمعیت (میلیون)</div>
+                    </div>
+                    <div class="stat-card" data-tooltip="سطح فناوری شما. بر قدرت نظامی، رشد اقتصادی و درآمد تأثیر می‌گذارد.">
+                        <div class="stat-icon"><i class="fas fa-microchip"></i></div>
+                        <div class="stat-value" id="player-tech">1</div>
+                        <div class="stat-label">سطح فناوری</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions-panel">
+                <div class="panel-title"><i class="fas fa-chess-king"></i> اقدامات استراتژیک</div>
+                <div class="btn">
+                    <span><i class="fas fa-tasks"></i> عملیات مجاز</span>
+                    <div class="btn-cost">
+                        <span id="action-number"></span><span>/3 <i class="fas fa-bolt"></i></span>
+                    </div>
+                </div>
+                <button id="economy-btn" class="btn btn-economy">
+                    <span><i class="fas fa-building"></i> تقویت اقتصاد</span>
+                    <div>
+                        <span class="btn-cost">40 <i class="fas fa-coins"></i></span>
+                    </div>
+                </button>
+                <button id="military-btn" class="btn btn-military">
+                    <span><i class="fas fa-fighter-jet"></i> تقویت نظامی</span>
+                    <div>
+                        <span class="btn-cost">40 <i class="fas fa-coins"></i></span>
+                    </div>
+                </button>
+                <button id="tech-btn" class="btn btn-tech">
+                    <span><i class="fas fa-laptop-code"></i> ارتقای فناوری</span>
+                    <div>
+                        <span class="btn-cost">80 <i class="fas fa-coins"></i></span>
+                    </div>
+                </button>
+                <button id="attack-btn" class="btn btn-attack" disabled>
+                    <span><i class="fas fa-crosshairs"></i> حمله</span>
+                    <span class="btn-cost">40 <i class="fas fa-shield-alt"></i></span>
+                </button>
+                <button id="next-turn-btn" class="btn btn-next">
+                    <span><i class="fas fa-forward"></i> دور بعد</span>
+                    <span><i class="fas fa-calendar-alt"></i></span>
+                </button>
+            </div>
+            
+            <div class="log-panel" id="log"></div>
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+
+<script>
+        // Game initialization and core logic - completely rewritten for balance and fun
+        (function() {
+            // Wait for all resources to load, then hide loading overlay and start game
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    document.querySelector('.loading-overlay').style.display = 'none';
+                    document.querySelector('.container').style.display = 'block';
+                    initGame();
+                }, 1000); // keep the 1s splash for smoothness
+            });
+
+            // ==================== GAME CONFIGURATION ====================
+            const gameConfig = {
+                difficulty: 'hard',           // only hard mode – but AI is balanced
+                playerCountry: null,           // id of player's country
+                selectedCountry: null,         // currently selected target country id
+                year: 1940,
+                turn: 0,
+                gameStarted: false,
+                gameOver: false,
+                maxActionsPerTurn: 3,
+                actionsThisTurn: 0,
+                conqueredRequired: 0.75        // need 75% of world to win
+            };
+
+            // Colors and names (20 countries – untouched)
+            const countryColors = [
+                '#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6',
+                '#1abc9c', '#e67e22', '#34495e', '#d35400', '#27ae60',
+                '#8e44ad', '#16a085', '#333', '#2980b9', '#f39c12',
+                '#7f8c8d', '#ff0000', '#0600c8', '#d7d7d7', '#00ffb1'
+            ];
+            const countryNames = [
+                'آرمانیا', 'بلاریا', 'تورانیا', 'دلماکا', 'سارویا',
+                'فارلند', 'گورستان', 'هورتان', 'یولاندا', 'زنداریا',
+                'کالیدون', 'موریتانی', 'نورسک', 'اولمپیا', 'پارسا',
+                'کویستا', 'ریگولوس', 'سامارا', 'تراکیا', 'ویکتوریا'
+            ];
+            const countryPositions = [
+                { left: (2-1), top: 5, width: 20, height: 15 },   // 0
+                { left: (30-1), top: 5, width: 20, height: 15 },  // 1
+                { left: (55-1), top: 5, width: 20, height: 15 },  // 2
+                { left: (80-1), top: 5, width: 20, height: 15 },  // 3
+                { left: (2-1), top: 25, width: 20, height: 15 },  // 4
+                { left: (30-1), top: 25, width: 20, height: 15 }, // 5
+                { left: (55-1), top: 25, width: 20, height: 15 }, // 6
+                { left: (80-1), top: 25, width: 20, height: 15 }, // 7
+                { left: (2-1), top: 45, width: 20, height: 15 },  // 8
+                { left: (30-1), top: 45, width: 20, height: 15 }, // 9
+                { left: (55-1), top: 45, width: 20, height: 15 }, // 10
+                { left: (80-1), top: 45, width: 20, height: 15 }, // 11
+                { left: (2-1), top: 65, width: 20, height: 15 },   // 12
+                { left: (30-1), top: 65, width: 20, height: 15 },  // 13
+                { left: (55-1), top: 65, width: 20, height: 15 },  // 14
+                { left: (80-1), top: 65, width: 20, height: 15 },  // 15
+                { left: (2-1), top: 83, width: 20, height: 15 },   // 16
+                { left: (30-1), top: 83, width: 20, height: 15 },  // 17
+                { left: (55-1), top: 83, width: 20, height: 15 },  // 18
+                { left: (80-1), top: 83, width: 20, height: 15 }   // 19
+            ];
+
+            // ==================== COUNTRIES DATA ====================
+            let countries = [];
+
+            function initializeCountries() {
+                countries = Array(20).fill().map((_, i) => ({
+                    id: i,
+                    name: countryNames[i],
+                    originalName: countryNames[i],
+                    color: countryColors[i],
+                    money: Math.floor(100 + Math.random() * 80),      // 100–180
+                    gdp: 3 + Math.random() * 5,                       // 3%–8%
+                    army: 20 + Math.floor(Math.random() * 30),        // 20–50
+                    land: 1,                                           // each starts with 1 territory
+                    population: 8 + Math.random() * 10,               // 8–18 million
+                    tech: 1,
+                    isConquered: false,
+                    conqueredBy: null,
+                    turnsSinceLastAttack: 0,                           // for AI cooldown
+                    position: countryPositions[i]
+                }));
+                // Initialize relations (not used heavily but kept for structure)
+                countries.forEach(c => {
+                    c.relations = {};
+                    countries.forEach(other => {
+                        if (other.id !== c.id) c.relations[other.id] = Math.floor(Math.random() * 20 - 10);
+                    });
+                });
+            }
+
+            // ==================== DOM ELEMENTS ====================
+            const mapElement = document.getElementById('map');
+            const yearElement = document.getElementById('year');
+            const turnElement = document.getElementById('turn');
+            const playerCountryNameElement = document.getElementById('player-country-name');
+            const playerMoneyElement = document.getElementById('player-money');
+            const playerGdpElement = document.getElementById('player-gdp');
+            const playerArmyElement = document.getElementById('player-army');
+            const playerLandElement = document.getElementById('player-land');
+            const playerPopulationElement = document.getElementById('player-population');
+            const playerTechElement = document.getElementById('player-tech');
+            const economyBtn = document.getElementById('economy-btn');
+            const militaryBtn = document.getElementById('military-btn');
+            const techBtn = document.getElementById('tech-btn');
+            const attackBtn = document.getElementById('attack-btn');
+            const nextTurnBtn = document.getElementById('next-turn-btn');
+            const logElement = document.getElementById('log');
+            const tooltipElement = document.getElementById('tooltip');
+            const actionNumber = document.getElementById('action-number');
+
+
+            actionNumber.innerHTML = Math.abs(gameConfig.actionsThisTurn - 3)
+            function showActionsNumber() {
+                actionNumber.innerHTML = Math.abs(gameConfig.actionsThisTurn - 3)
+            }
+
+            
+            // ==================== HELPER FUNCTIONS ====================
+            function addLogMessage(message, sender = 'سیستم') {
+                const now = new Date();
+                const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
+                const senderSpan = document.createElement('span');
+                // Color coding
+                const colors = {
+                    'سیستم': '#3498db', 'اطلاعات': '#2ecc71', 'هشدار': '#e74c3c',
+                    'پیروزی': '#f1c40f', 'شکست': '#e74c3c', 'اقتصاد': '#2ecc71',
+                    'نظامی': '#f39c12', 'فناوری': '#9b59b6', 'رویداد': '#1abc9c',
+                    'پیروزی نهایی': '#f1c40f', 'شکست نهایی': '#c0392b'
+                };
+                senderSpan.style.color = colors[sender] || '#f39c12';
+                senderSpan.textContent = `[${sender}] `;
+                const messageSpan = document.createElement('span');
+                messageSpan.textContent = message;
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'log-time';
+                timeSpan.textContent = timeString;
+                logEntry.appendChild(senderSpan);
+                logEntry.appendChild(messageSpan);
+                logEntry.appendChild(timeSpan);
+                logElement.appendChild(logEntry);
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+
+            function updatePlayerStats() {
+                if (gameConfig.playerCountry === null || gameConfig.gameOver) {
+                    // disable all action buttons
+                    [economyBtn, militaryBtn, techBtn, attackBtn].forEach(btn => btn.disabled = true);
+                    return;
+                }
+                const p = countries[gameConfig.playerCountry];
+                playerCountryNameElement.textContent = p.name;
+                playerMoneyElement.textContent = Math.floor(p.money);
+                playerGdpElement.textContent = p.gdp.toFixed(1) + '%';
+                playerArmyElement.textContent = Math.floor(p.army);
+                playerLandElement.textContent = p.land;
+                playerPopulationElement.textContent = p.population.toFixed(1);
+                playerTechElement.textContent = p.tech;
+
+                // Enable/disable based on resources, actions left, and game state
+                const actionsLeft = gameConfig.maxActionsPerTurn - gameConfig.actionsThisTurn;
+                economyBtn.disabled = gameConfig.gameOver || actionsLeft <= 0 || p.money < 40;
+                militaryBtn.disabled = gameConfig.gameOver || actionsLeft <= 0 || p.money < 40;
+                techBtn.disabled = gameConfig.gameOver || actionsLeft <= 0 || p.money < 80;
+                // Attack requires: target selected, enough army (>=30), enough money (40), and action left
+                const targetOk = gameConfig.selectedCountry !== null; // شرط isConquered رو برداشتم
+                attackBtn.disabled = gameConfig.gameOver || actionsLeft <= 0 || p.money < 40 || p.army < 30 || !targetOk;
+            }
+
+            function renderMap() {
+                mapElement.innerHTML = '';
+                countries.forEach(c => {
+                    if (c.land <= 0) return;
+                    const el = document.createElement('div');
+                    el.className = 'country';
+                    el.id = `country-${c.id}`;
+                    
+                    // Color: if conquered, use conqueror's color
+                    if (c.isConquered && c.conqueredBy !== null) {
+                        const conqueror = countries[c.conqueredBy];
+                        el.style.backgroundColor = conqueror ? conqueror.color : '#888';
+                    } else {
+                        el.style.backgroundColor = c.color;
+                    }
+                    
+                    el.style.width = c.position.width + '%';
+                    el.style.height = c.position.height + '%';
+                    el.style.left = c.position.left + '%';
+                    el.style.top = c.position.top + '%';
+
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'country-name';
+                    nameDiv.textContent = c.isConquered ? c.originalName + ' (مستعمره)' : c.name;
+                    el.appendChild(nameDiv);
+
+                    // Hover info - FIXED: Show correct country's stats
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'country-info';
+                    const statsDiv = document.createElement('div');
+                    statsDiv.className = 'country-stats';
+                    
+                    // تعیین کشور اصلی برای نمایش آمار
+                    let displayCountry = c;
+                    if (c.isConquered && c.conqueredBy !== null) {
+                        displayCountry = countries[c.conqueredBy]; // آمار کشور صاحب‌مستعمره رو نشون بده
+                    }
+                    
+                    statsDiv.innerHTML = `
+                        <div class="country-stat"><i class="fas fa-shield-alt"></i> ${Math.floor(displayCountry.army)}</div>
+                        <div class="country-stat"><i class="fas fa-coins"></i> ${Math.floor(displayCountry.money)}</div>
+                        <div class="country-stat"><i class="fas fa-map-marked-alt"></i> ${displayCountry.land}</div>
+                    `;
+                    infoDiv.appendChild(statsDiv);
+                    el.appendChild(infoDiv);
+
+                    el.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        selectCountry(c.id);
+                    });
+                    mapElement.appendChild(el);
+                });
+
+                // Highlight player country if any
+                if (gameConfig.playerCountry !== null) {
+                    const playerEl = document.getElementById(`country-${gameConfig.playerCountry}`);
+                    if (playerEl) playerEl.style.boxShadow = '0 0 15px rgba(255,255,255,0.8)';
+                }
+                // Highlight selected target
+                if (gameConfig.selectedCountry !== null) {
+                    const targetEl = document.getElementById(`country-${gameConfig.selectedCountry}`);
+                    if (targetEl) targetEl.classList.add('selected');
+                }
+            }
+
+            // ==================== PLAYER ACTIONS ====================
+            function improveEconomy() {
+                if (!canPerformAction()) return;
+                const p = countries[gameConfig.playerCountry];
+                if (p.money < 40) { addLogMessage('پول کافی نیست! (نیاز 40)', 'هشدار'); return; }
+                p.money -= 40;
+                const gain = 0.8 + (p.tech * 0.3);
+                p.gdp += gain;
+                gameConfig.actionsThisTurn++;
+                addLogMessage(`اقتصاد تقویت شد: +${gain.toFixed(1)}% رشد اقتصادی.`, 'اقتصاد');
+                // small chance of population boost
+                if (Math.random() < 0.3) {
+                    const popGain = p.population * 0.02 * (1 + p.tech * 0.05);
+                    p.population += popGain;
+                    addLogMessage(`رشد اقتصادی باعث افزایش جمعیت (+${popGain.toFixed(1)} میلیون) شد.`, 'اقتصاد');
+                }
+                showActionsNumber();
+                updatePlayerStats();
+                renderMap(); // maybe color change? no, but to keep consistency
+            }
+
+            function improveMilitary() {
+                if (!canPerformAction()) return;
+                const p = countries[gameConfig.playerCountry];
+                if (p.money < 40) { addLogMessage('پول کافی نیست! (نیاز 40)', 'هشدار'); return; }
+                p.money -= 40;
+                const gain = 12 + (p.tech * 3) + Math.floor(Math.random() * 8);
+                p.army += gain;
+                gameConfig.actionsThisTurn++;
+                addLogMessage(`نیروی نظامی +${gain} واحد تقویت شد.`, 'نظامی');
+                showActionsNumber();
+                updatePlayerStats();
+                renderMap();
+            }
+
+            function improveTechnology() {
+                if (!canPerformAction()) return;
+                const p = countries[gameConfig.playerCountry];
+                if (p.money < 80) { addLogMessage('پول کافی نیست! (نیاز 80)', 'هشدار'); return; }
+                p.money -= 80;
+                p.tech += 1;
+                gameConfig.actionsThisTurn++;
+                showActionsNumber();
+                addLogMessage(`فناوری به سطح ${p.tech} ارتقا یافت.`, 'فناوری');
+                // side benefits
+                if (Math.random() < 0.5) {
+                    const bonus = 5 + p.tech * 2;
+                    p.army += bonus;
+                    addLogMessage(`فناوری جدید به نیروی نظامی +${bonus} کمک کرد.`, 'فناوری');
+                }
+                if (Math.random() < 0.3) {
+                    const bonus = 0.5 + p.tech * 0.2;
+                    p.gdp += bonus;
+                    addLogMessage(`فناوری باعث رشد اقتصادی +${bonus.toFixed(1)}% شد.`, 'فناوری');
+                }
+                updatePlayerStats();
+                renderMap();
+            }
+
+
+            function attackCountry() {
+                if (!canPerformAction()) return;
+                const attacker = countries[gameConfig.playerCountry];
+                const targetId = gameConfig.selectedCountry;
+                if (targetId === null || targetId === gameConfig.playerCountry) {
+                    addLogMessage('هدف نامعتبر است.', 'هشدار'); return;
+                }
+                
+                const defender = countries[targetId];
+                
+                // پیدا کردن کشور اصلی (اگه مستعمره باشه)
+                let targetCountry = defender;
+                let originalOwner = null;
+                if (defender.isConquered) {
+                    originalOwner = countries[defender.conqueredBy];
+                    targetCountry = originalOwner; // کشور اصلی رو هدف قرار بده
+                }
+                
+                if (attacker.money < 40) { addLogMessage('پول کافی برای حمله ندارید (40).', 'هشدار'); return; }
+                if (attacker.army < 30) { addLogMessage('نیروی نظامی کافی نیست (حداقل 30).', 'هشدار'); return; }
+
+                // کم کردن هزینه
+                attacker.money -= 40;
+                gameConfig.actionsThisTurn++;
+                showActionsNumber();
+
+                // محاسبه قدرت
+                const attackerPower = attacker.army * (1 + attacker.tech * 0.2);
+                const defenderPower = targetCountry.army * (1 + targetCountry.tech * 0.1) * 1.3;
+                const randomFactor = 0.9 + Math.random() * 0.2;
+
+                if (attackerPower * randomFactor > defenderPower) {
+                    // پیروزی - کل کشور فتح میشه
+                    const landGain = targetCountry.land;
+                    const popGain = targetCountry.population * 0.8;
+                    const moneyGain = targetCountry.money * (0.6 + attacker.tech * 0.02);
+                    const armyLoss = attacker.army * (0.2 - attacker.tech * 0.01);
+                    
+                    attacker.land += landGain;
+                    attacker.population += popGain;
+                    attacker.money += moneyGain;
+                    attacker.army = Math.max(1, attacker.army - armyLoss);
+
+                    // همه مستعمره‌های اون کشور رو هم به مالکیت تو دربیار
+                    countries.forEach(c => {
+                        if (c.conqueredBy === targetCountry.id) {
+                            c.conqueredBy = attacker.id;
+                        }
+                    });
+
+                    // خود کشور اصلی رو فتح کن
+                    targetCountry.isConquered = true;
+                    targetCountry.conqueredBy = attacker.id;
+
+                    addLogMessage(`✨ پیروزی! کل امپراتوری ${targetCountry.name} فتح شد! +${landGain} سرزمین، +${Math.floor(popGain)} میلیون جمعیت، +${Math.floor(moneyGain)} پول.`, 'پیروزی');
+                    
+                    // چک کردن شرط برد
+                    const totalCountries = countries.length;
+                    const conqueredByPlayer = countries.filter(c => c.isConquered && c.conqueredBy === gameConfig.playerCountry).length;
+                    const playerOwned = 1 + conqueredByPlayer;
+                    if (playerOwned / totalCountries >= gameConfig.conqueredRequired) {
+                        addLogMessage('🎉 شما ۷۵٪ جهان را فتح کردید! پیروزی بزرگ!', 'پیروزی نهایی');
+                        gameConfig.gameOver = true;
+                        celebrateVictory();
+                    }
+                } else {
+                    // شکست
+                    const armyLoss = attacker.army * (0.3 - attacker.tech * 0.01);
+                    attacker.army = Math.max(1, attacker.army - armyLoss);
+                    
+                    let defenderName = targetCountry.name;
+                    if (defender.isConquered && originalOwner) {
+                        defenderName = `${targetCountry.name} (حمله از طریق مستعمره ${defender.originalName})`;
+                    }
+                    
+                    addLogMessage(`💔 حمله به ${defenderName} شکست خورد! ${Math.floor(armyLoss)} واحد نظامی از دست رفت.`, 'شکست');
+
+                    // ضدحمله
+                    if (Math.random() < 0.6) {
+                        const counterDamage = targetCountry.army * (0.15 + Math.random() * 0.1);
+                        attacker.army = Math.max(1, attacker.army - counterDamage);
+                        addLogMessage(`⚠️ ضدحمله ${targetCountry.name}: ${Math.floor(counterDamage)} واحد دیگر نابود شد.`, 'هشدار');
+                    }
+                }
+
+                // پاک کردن هدف انتخاب شده
+                document.getElementById(`country-${targetId}`)?.classList.remove('selected');
+                gameConfig.selectedCountry = null;
+                updatePlayerStats();
+                renderMap();
+            }
+
+
+            function canPerformAction() {
+                if (gameConfig.gameOver) return false;
+                if (gameConfig.playerCountry === null) {
+                    addLogMessage('ابتدا کشور خود را انتخاب کنید.', 'هشدار');
+                    return false;
+                }
+                if (gameConfig.actionsThisTurn >= gameConfig.maxActionsPerTurn) {
+                    addLogMessage('شما در این دور اقدامی باقی ندارید. دکمه "دور بعد" را بزنید.', 'هشدار');
+                    return false;
+                }
+                return true;
+            }
+
+            // ==================== TURN PROCESSING ====================
+            function nextTurn() {
+                if (gameConfig.gameOver) return;
+                if (gameConfig.playerCountry === null) {
+                    addLogMessage('ابتدا کشور خود را انتخاب کنید.', 'هشدار');
+                    return;
+                }
+
+                // Reset actions for new turn
+                gameConfig.actionsThisTurn = 0;
+                gameConfig.turn++;
+                gameConfig.year++;
+                yearElement.textContent = gameConfig.year;
+                turnElement.textContent = gameConfig.turn;
+
+                // Player income
+                const p = countries[gameConfig.playerCountry];
+                const income = p.gdp * p.land * (0.8 + p.tech * 0.2); // gdp% * land * multiplier
+                p.money += Math.floor(income);
+                // Population growth
+                const popGrowth = p.population * (0.01 + p.gdp * 0.0005) * (1 + p.tech * 0.02);
+                p.population += popGrowth;
+
+                addLogMessage(`دور جدید: درآمد ${Math.floor(income)} پول | رشد جمعیت ${popGrowth.toFixed(2)} میلیون`, 'اقتصاد');
+
+                // Check if player lost (land zero) - shouldn't happen normally
+                if (p.land <= 0) {
+                    addLogMessage('شما تمام سرزمین‌های خود را از دست دادید. Game Over', 'شکست نهایی');
+                    gameConfig.gameOver = true;
+                    updatePlayerStats();
+                    renderMap();
+                    return;
+                }
+
+                // AI updates
+                updateAICountries();
+
+                // Random events
+                processRandomEvents();
+
+                // Re-render map (in case AI conquered something)
+                renderMap();
+                updatePlayerStats();
+                showActionsNumber();
+            }
+
+            function updateAICountries() {
+                const playerId = gameConfig.playerCountry;
+                // First, increment turnsSinceLastAttack for all AI
+                countries.forEach(c => { if (!c.isConquered && c.id !== playerId) c.turnsSinceLastAttack++; });
+
+                for (let i = 0; i < countries.length; i++) {
+                    const ai = countries[i];
+                    if (ai.isConquered || ai.id === playerId) continue;
+
+                    // AI income
+                    const income = ai.gdp * ai.land * 0.7; // slightly less efficient than player
+                    ai.money += Math.floor(income);
+                    ai.population += ai.population * 0.008;
+
+                    // AI decision making - based on turn and resources
+                    const turn = gameConfig.turn;
+                    // Aggressiveness grows slowly, max 0.4 by turn 20
+                    let baseAggro = Math.min(0.15 + turn * 0.012, 0.4);
+                    // Adjust based on relative strength (optional)
+                    
+                    // Each AI may spend money on improvements or save for attack
+                    if (ai.money > 60 && Math.random() < 0.4) {
+                        // Improve military (preferred) or tech
+                        if (Math.random() < 0.7 || ai.tech < 2) {
+                            // military
+                            const cost = 40;
+                            if (ai.money >= cost) {
+                                ai.money -= cost;
+                                ai.army += 15 + ai.tech * 2;
+                            }
+                        } else {
+                            // tech upgrade
+                            const cost = 80;
+                            if (ai.money >= cost) {
+                                ai.money -= cost;
+                                ai.tech += 1;
+                            }
+                        }
+                    }
+
+                    // Attack decision
+                    // Conditions: enough army, money, cooldown passed, and random chance
+                    if (ai.army > 35 && ai.money > 80 && ai.turnsSinceLastAttack > 3 && Math.random() < baseAggro) {
+                        // Find potential targets: non-conquered, not itself, not allied (we ignore relations)
+                        const targets = countries.filter(c => !c.isConquered && c.id !== ai.id);
+                        if (targets.length === 0) continue;
+                        // Prefer weak targets (low army) or sometimes target player
+                        targets.sort((a, b) => a.army - b.army);
+                        // 30% chance to attack player if player is weak enough
+                        let target = null;
+                        if (playerId !== null && !countries[playerId].isConquered && Math.random() < 0.3) {
+                            target = countries[playerId];
+                        } else {
+                            target = targets[0]; // weakest
+                        }
+                        if (!target) continue;
+
+                        // Attack calculation
+                        const aiPower = ai.army * (1 + ai.tech * 0.15);
+                        const defPower = target.army * (1 + target.tech * 0.1);
+                        if (aiPower > defPower * 1.1) { // confident
+                            // AI wins
+                            ai.land += target.land;
+                            ai.population += target.population * 0.7;
+                            ai.money += target.money * 0.5;
+                            ai.army = Math.max(1, ai.army * 0.7); // lose some
+                            target.isConquered = true;
+                            target.conqueredBy = ai.id;
+                            ai.turnsSinceLastAttack = 0;
+                            addLogMessage(`⚠️ ${ai.name} به ${target.originalName} حمله کرد و آن را فتح کرد.`, 'اطلاعات');
+                            if (target.id === playerId) {
+                                addLogMessage('💀 کشور شما توسط دشمن فتح شد!', 'شکست نهایی');
+                                gameConfig.gameOver = true;
+                                return;
+                            }
+                        } else {
+                            // AI loses
+                            ai.army = Math.max(1, ai.army * 0.6);
+                            ai.turnsSinceLastAttack = 0;
+                            addLogMessage(`${ai.name} به ${target.originalName} حمله کرد و شکست خورد.`, 'اطلاعات');
+                        }
+                    }
+                }
+            }
+
+            function processRandomEvents() {
+                // Events only for independent countries (including player)
+                const active = countries.filter(c => !c.isConquered);
+                active.forEach(c => {
+                    const r = Math.random();
+                    if (r < 0.1) { // 10% chance of event
+                        const type = Math.floor(Math.random() * 5);
+                        switch(type) {
+                            case 0: // economic boom
+                                c.money += 20 + Math.random() * 30;
+                                addLogMessage(`رونق اقتصادی در ${c.name}: +${Math.floor(20+Math.random()*30)} پول`, 'رویداد');
+                                break;
+                            case 1: // recession
+                                c.money = Math.max(0, c.money - (15 + Math.random() * 25));
+                                addLogMessage(`رکود در ${c.name}: کاهش پول`, 'رویداد');
+                                break;
+                            case 2: // military discovery
+                                c.army += 10 + Math.random() * 20;
+                                addLogMessage(`کشف نظامی در ${c.name}: نیروی نظامی افزایش یافت`, 'رویداد');
+                                break;
+                            case 3: // tech breakthrough
+                                if (Math.random() < 0.5) {
+                                    c.tech += 1;
+                                    addLogMessage(`پیشرفت فناوری در ${c.name}`, 'رویداد');
+                                }
+                                break;
+                            case 4: // unrest
+                                c.army = Math.max(1, c.army * 0.9);
+                                addLogMessage(`ناآرامی در ${c.name}: کاهش نیروی نظامی`, 'رویداد');
+                                break;
+                        }
+                    }
+                });
+            }
+
+            // ==================== UI & SELECTION ====================
+            function selectCountry(id) {
+                if (gameConfig.gameOver) return;
+                
+                if (!gameConfig.gameStarted) {
+                    // First selection: choose player country
+                    gameConfig.playerCountry = id;
+                    gameConfig.gameStarted = true;
+                    addLogMessage(`شما کشور ${countries[id].name} را انتخاب کردید.`, 'سیستم');
+                    addLogMessage('می‌توانید هر نوبت ۳ اقدام انجام دهید. با حمله و تقویت، امپراتوری خود را بسازید.', 'سیستم');
+                    renderMap();
+                    updatePlayerStats();
+                    return;
+                }
+
+                // In-game: select target for attack
+                if (id === gameConfig.playerCountry) {
+                    // clicking own country: deselect target if any
+                    if (gameConfig.selectedCountry !== null) {
+                        document.getElementById(`country-${gameConfig.selectedCountry}`)?.classList.remove('selected');
+                        gameConfig.selectedCountry = null;
+                        attackBtn.disabled = true;
+                    }
+                    return;
+                }
+                
+                const target = countries[id];
+                
+                // Deselect previous
+                if (gameConfig.selectedCountry !== null) {
+                    document.getElementById(`country-${gameConfig.selectedCountry}`)?.classList.remove('selected');
+                }
+                
+                // Select new
+                document.getElementById(`country-${id}`)?.classList.add('selected');
+                gameConfig.selectedCountry = id;
+                
+                // Show appropriate info based on whether it's a colony or original country
+                if (target.isConquered) {
+                    const owner = countries[target.conqueredBy];
+                    addLogMessage(`🎯 هدف: مستعمره ${target.originalName} (تحت مالکیت ${owner.name}) - نیرو: ${Math.floor(target.army)} - پول: ${Math.floor(target.money)}`, 'اطلاعات');
+                } else {
+                    addLogMessage(`🎯 هدف: ${target.name} - نیرو: ${Math.floor(target.army)} - پول: ${Math.floor(target.money)}`, 'اطلاعات');
+                }
+                
+                updatePlayerStats(); // enables attack button if conditions met
+            }
+
+            // ==================== VICTORY CELEBRATION ====================
+            function celebrateVictory() {
+                const messages = [
+                    "شما یک امپراتوری بی‌نظیر ساختید!",
+                    "تمام جهان تحت کنترل شماست!",
+                    "پادشاهی شما برای قرن‌ها ادامه خواهد یافت!",
+                    "هیچ کس نمی‌تواند در برابر قدرت شما مقاومت کند!",
+                    "تبریک! شما بزرگ‌ترین فرمانروای تاریخ شدید!"
+                ];
+                messages.forEach((msg, idx) => {
+                    setTimeout(() => addLogMessage(msg, 'پیروزی نهایی'), idx * 2000);
+                });
+
+                // Simple confetti
+                const confettiContainer = document.createElement('div');
+                confettiContainer.style.position = 'fixed';
+                confettiContainer.style.top = '0';
+                confettiContainer.style.left = '0';
+                confettiContainer.style.width = '100%';
+                confettiContainer.style.height = '100%';
+                confettiContainer.style.pointerEvents = 'none';
+                confettiContainer.style.zIndex = '1000';
+                document.body.appendChild(confettiContainer);
+                for (let i = 0; i < 100; i++) {
+                    const conf = document.createElement('div');
+                    conf.style.position = 'absolute';
+                    conf.style.width = '8px';
+                    conf.style.height = '8px';
+                    conf.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 60%)`;
+                    conf.style.borderRadius = '50%';
+                    conf.style.left = Math.random() * 100 + '%';
+                    conf.style.top = '-10px';
+                    conf.style.animation = `fall ${3+Math.random()*4}s linear forwards`;
+                    confettiContainer.appendChild(conf);
+                }
+                const style = document.createElement('style');
+                style.textContent = `@keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }`;
+                document.head.appendChild(style);
+            }
+
+            // ==================== TOOLTIPS ====================
+            function setupTooltips() {
+                document.querySelectorAll('.stat-card[data-tooltip]').forEach(card => {
+                    const text = card.dataset.tooltip;
+                    card.addEventListener('mouseenter', (e) => {
+                        tooltipElement.textContent = text;
+                        tooltipElement.style.left = (e.clientX + 15) + 'px';
+                        tooltipElement.style.top = (e.clientY + 15) + 'px';
+                        tooltipElement.style.opacity = '1';
+                    });
+                    card.addEventListener('mouseleave', () => tooltipElement.style.opacity = '0');
+                    card.addEventListener('mousemove', (e) => {
+                        tooltipElement.style.left = (e.clientX + 15) + 'px';
+                        tooltipElement.style.top = (e.clientY + 15) + 'px';
+                    });
+                });
+            }
+
+            // ==================== INIT ====================
+            function initGame() {
+                initializeCountries();
+                renderMap();
+                setupEventListeners();
+                setupTooltips();
+                addLogMessage('خوش آمدید به بازی جبهه مغزها', 'سیستم');
+                addLogMessage('بازی آماده است! روی یک کشور کلیک کنید تا آن را به عنوان کشور خود انتخاب کنید.', 'سیستم');
+                // Reset UI
+                gameConfig.playerCountry = null;
+                gameConfig.selectedCountry = null;
+                gameConfig.gameStarted = false;
+                gameConfig.gameOver = false;
+                gameConfig.turn = 0;
+                gameConfig.year = 1940;
+                gameConfig.actionsThisTurn = 0;
+                yearElement.textContent = gameConfig.year;
+                turnElement.textContent = gameConfig.turn;
+                updatePlayerStats();
+            }
+
+            function setupEventListeners() {
+                economyBtn.addEventListener('click', improveEconomy);
+                militaryBtn.addEventListener('click', improveMilitary);
+                techBtn.addEventListener('click', improveTechnology);
+                attackBtn.addEventListener('click', attackCountry);
+                nextTurnBtn.addEventListener('click', nextTurn);
+                window.addEventListener('resize', () => renderMap());
+            }
+        })();
+</script>
+</body>
+</html>
